@@ -31,7 +31,8 @@ Full write-up, including the options considered and why:
 ## Install
 
 ```bash
-./install
+git clone git@github.com:raavail-lasso/Omarchy-GTK4-Theming.git
+cd Omarchy-GTK4-Theming && ./install
 nautilus -q          # then reopen with Super+Shift+F
 ```
 
@@ -80,3 +81,7 @@ docs/                   design notes and decisions
 - **Ways of starting Nautilus:** Super+Shift+F is confirmed. The app launcher
   and "Show in folder" go through the `.desktop` and D-Bus overrides, which
   aren't confirmed yet.
+
+## License
+
+MIT

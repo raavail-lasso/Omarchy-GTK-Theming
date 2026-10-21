@@ -13,7 +13,7 @@ DESKTOP="$HOME/.local/share/applications/org.gnome.Nautilus.desktop"
 BINDINGS="$HOME/.config/hypr/bindings.lua"
 BEGIN="-- >>> omarchy-gtk4-theming >>>"
 END="-- <<< omarchy-gtk4-theming <<<"
-NOTE="Omarchy GTK4 Theming (gtk-live-css). Remove with ~/Projects/Omarchy GTK4 Theming/uninstall"
+NOTE="Omarchy GTK4 Theming (gtk-live-css). Remove with $SRC/uninstall"
 
 step() { printf '  %s\n' "$*"; }
 
