@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Self-check for the installed library. Opens a GTK 4 test window, switches
+# "themes" the way omarchy-theme-set does (delete the theme folder, move a new
+# one in; then rewrite the file in place) and checks the open window follows.
+# Re-run after GTK updates.
+set -euo pipefail
+cd "$(dirname "$0")"
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+gcc -o "$tmp/run" src/test.c $(pkg-config --cflags --libs gtk4)
+mkdir -p "$tmp/home/cfg/gtk-4.0" "$tmp/home/theme"
+echo '@define-color probe #ff0000;' > "$tmp/home/theme/gtk.css"
+ln -s "$tmp/home/theme/gtk.css" "$tmp/home/cfg/gtk-4.0/gtk.css"
+TESTBASE="$tmp/home" XDG_CONFIG_HOME="$tmp/home/cfg" \
+  LD_PRELOAD="$HOME/.local/lib/gtk-live-css.so" timeout 15 "$tmp/run" 2> >(grep -v -i warning >&2)

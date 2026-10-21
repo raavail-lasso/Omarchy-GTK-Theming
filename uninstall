@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Remove Omarchy GTK4 Theming. GTK 4 apps go back to stock Adwaita colours the
+# next time they start.
+set -euo pipefail
+
+LIB="$HOME/.local/lib/gtk-live-css.so"
+TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
+GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
+THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
+DBUS="$HOME/.local/share/dbus-1/services/org.gnome.Nautilus.service"
+DESKTOP="$HOME/.local/share/applications/org.gnome.Nautilus.desktop"
+BINDINGS="$HOME/.config/hypr/bindings.lua"
+
+# Only remove files we wrote, never a user's own override of the same name.
+for f in "$DBUS" "$DESKTOP"; do
+  grep -qs gtk-live-css "$f" && rm -f "$f"
+done
+busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1 || true
+
+if [[ -f $BINDINGS ]]; then
+  sed -i '/^-- >>> omarchy-gtk4-theming >>>$/,/^-- <<< omarchy-gtk4-theming <<<$/d' "$BINDINGS"
+  hyprctl reload >/dev/null 2>&1 || true
+fi
+
+[[ $(readlink "$GTK_CSS" 2>/dev/null) == "$THEME_CSS" ]] && rm -f "$GTK_CSS"
+rm -f "$TPL" "$THEME_CSS" "$LIB"
+
+printf 'Omarchy GTK4 Theming removed. Restart Nautilus (nautilus -q) to drop the live reload.\n'

@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Install Omarchy GTK4 Theming for the current user. Safe to re-run; re-run it
+# after a Nautilus update to refresh the override files.
+set -euo pipefail
+
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB="$HOME/.local/lib/gtk-live-css.so"
+TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
+GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
+THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
+DBUS="$HOME/.local/share/dbus-1/services/org.gnome.Nautilus.service"
+DESKTOP="$HOME/.local/share/applications/org.gnome.Nautilus.desktop"
+BINDINGS="$HOME/.config/hypr/bindings.lua"
+BEGIN="-- >>> omarchy-gtk4-theming >>>"
+END="-- <<< omarchy-gtk4-theming <<<"
+NOTE="Omarchy GTK4 Theming (gtk-live-css). Remove with ~/Projects/Omarchy GTK4 Theming/uninstall"
+
+step() { printf '  %s\n' "$*"; }
+
+printf '\nInstalling Omarchy GTK4 Theming\n\n'
+
+# --- dependencies -----------------------------------------------------------
+command -v gcc >/dev/null && pkg-config --exists gtk4 || {
+  printf 'Need gcc and the gtk4 headers.  On Arch:  sudo pacman -S gcc pkgconf gtk4\n' >&2
+  exit 1
+}
+command -v omarchy-theme-set-templates >/dev/null || { printf 'Omarchy not found.\n' >&2; exit 1; }
+step "dependencies present"
+
+# --- theme colours -> gtk.css -----------------------------------------------
+install -Dm644 "$SRC/themed/gtk.css.tpl" "$TPL"
+step "installed template -> $TPL"
+
+mkdir -p "$(dirname "$GTK_CSS")"
+if [[ -e $GTK_CSS && ! -L $GTK_CSS ]]; then
+  mv "$GTK_CSS" "$GTK_CSS.bak.$(date +%s)"
+  step "backed up your existing gtk.css"
+fi
+ln -sfn "$THEME_CSS" "$GTK_CSS"
+step "linked $GTK_CSS -> current theme"
+
+# --- live reload library ----------------------------------------------------
+# Build to a temp file and move it in: a running Nautilus keeps the old copy.
+mkdir -p "$(dirname "$LIB")"
+gcc -shared -fPIC -O2 -Wall -Wl,-z,defs $(pkg-config --cflags gtk4) \
+  -o "$LIB.tmp" "$SRC/src/gtk-live-css.c" -ldl
+mv "$LIB.tmp" "$LIB"
+step "built $LIB"
+
+# --- load it into Nautilus --------------------------------------------------
+# D-Bus activation ("Show in folder", launchers that honour DBusActivatable)
+mkdir -p "$(dirname "$DBUS")"
+{ echo "# $NOTE"
+  sed "s|^Exec=/usr/bin/nautilus|Exec=/usr/bin/env LD_PRELOAD=$LIB /usr/bin/nautilus|" \
+    /usr/share/dbus-1/services/org.gnome.Nautilus.service; } > "$DBUS"
+busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1 || true
+
+# App launchers that run Exec= directly
+mkdir -p "$(dirname "$DESKTOP")"
+{ echo "# $NOTE"
+  sed "s|^Exec=nautilus|Exec=env LD_PRELOAD=$LIB nautilus|" \
+    /usr/share/applications/org.gnome.Nautilus.desktop; } > "$DESKTOP"
+update-desktop-database "$(dirname "$DESKTOP")" 2>/dev/null || true
+
+grep -q LD_PRELOAD "$DBUS" && grep -q LD_PRELOAD "$DESKTOP" ||
+  step "WARNING: Nautilus changed its Exec lines; an override did not take. See docs."
+step "installed Nautilus D-Bus and launcher overrides"
+
+# Omarchy's Super+Shift+F starts nautilus by name, skipping both files above.
+if [[ -f $BINDINGS ]]; then
+  sed -i "/^$BEGIN\$/,/^$END\$/d" "$BINDINGS"
+  cat >> "$BINDINGS" <<EOF
+$BEGIN
+-- $NOTE
+hl.unbind("SUPER + SHIFT + F")
+o.bind("SUPER + SHIFT + F", "File manager", "env LD_PRELOAD=$LIB omarchy-launch-nautilus")
+hl.unbind("SUPER + ALT + SHIFT + F")
+o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", "env LD_PRELOAD=$LIB omarchy-launch-nautilus-cwd")
+$END
+EOF
+  hyprctl reload >/dev/null 2>&1 || true
+  step "rebound Super+Shift+F / Super+Alt+Shift+F in $BINDINGS"
+fi
+
+# --- render for the current theme -------------------------------------------
+if [[ ! -f $THEME_CSS ]]; then
+  omarchy-theme-refresh >/dev/null 2>&1 || true
+  step "rendered gtk.css for the current theme"
+fi
+
+cat <<'DONE'
+
+Done. Restart Nautilus once to load it:
+  nautilus -q        then open it with Super+Shift+F
+
+Check it loaded (should print a number above 0):
+  grep -c gtk-live-css /proc/$(pgrep -x nautilus)/maps
+DONE

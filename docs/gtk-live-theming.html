@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How to make GTK 4 apps follow Omarchy themes and repaint live when the theme changes.">
+<title>GTK 4 Live Theming — Matching GTK 4 apps to Omarchy themes</title>
+<style>
+:root{color-scheme:light;--paper:#f6f5f0;--ink:#202b2b;--muted:#5c6764;--line:#dfe3da;--accent:#227363;--sidebar:#182e2b;--card:#fff;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--accent)}
+a:focus-visible{outline:3px solid #e9a747;outline-offset:4px}.skip{position:fixed;top:-90px;left:20px;z-index:20;padding:12px;background:white}.skip:focus{top:12px}
+.sidebar{position:fixed;inset:0 auto 0 0;width:270px;background:var(--sidebar);color:#edf5ee;padding:30px 18px 18px;display:flex;flex-direction:column;overflow:auto}
+.brand{display:flex;gap:13px;align-items:center;padding:0 13px 24px}.brand-mark{width:38px;height:38px;border:1px solid #577a6e;border-radius:11px;display:grid;place-items:center;color:#b7d6be;font:18px var(--mono)}.brand strong{display:block;font-size:17px;letter-spacing:-.3px}.brand small{display:block;color:#aac1b6;font-size:11px;letter-spacing:1.7px;text-transform:uppercase}
+.nav-label{color:#a5bdb0;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;padding:15px 14px 8px}
+.sidebar nav a{display:block;text-decoration:none;color:#c6d8cd;font-size:12.5px;padding:8px 13px;margin:2px 0;border-radius:7px}.sidebar nav a:hover{background:#28453e;color:white}
+.sidebar-footer{border-top:1px solid #37534a;margin-top:auto;padding:18px 12px 0;font-size:11px;color:#b0c8ba}.sidebar-footer strong{color:#d8e9dd;display:block;margin-bottom:4px}
+main{margin-left:270px;max-width:1100px;padding:45px 52px 80px}
+.eyebrow{font:11px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
+h1{font:normal clamp(35px,4.4vw,58px)/1.07 Georgia,"Times New Roman",serif;letter-spacing:-2px;margin:16px 0}h1 em{color:var(--accent)}
+.lede{font-size:18px;color:var(--muted);max-width:760px}
+h2{font:normal 32px/1.15 Georgia,serif;letter-spacing:-.8px;margin:70px 0 6px;padding-top:20px;border-top:1px solid var(--line)}
+h2 .num{font:12px var(--mono);color:var(--accent);display:block;letter-spacing:1.5px;margin-bottom:8px}
+h3{font-size:17px;margin:32px 0 8px}
+p,li{max-width:820px}
+code{font:13px var(--mono);background:#e8ece4;padding:1px 6px;border-radius:4px}
+pre{font:13px/1.55 var(--mono);background:#1e2a28;color:#dbe8df;padding:16px 18px;border-radius:9px;overflow:auto}pre code{background:none;padding:0;color:inherit}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:14px 0 22px;font-size:14px}
+th{background:#e7ede4;text-align:left;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#3d4c48;padding:10px 14px}
+td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
+.callout{background:#e3efe6;border-left:4px solid var(--accent);padding:14px 18px;border-radius:0 9px 9px 0;margin:18px 0;max-width:820px}
+.callout.warn{background:#fbf0dc;border-color:#d79a2b}
+.tag{display:inline-block;font:11px var(--mono);padding:2px 8px;border-radius:4px;background:#e3ebe0;color:#1f5446;margin-right:4px}
+.t1{background:#d4ecd9}.t2{background:#f3e8c8;color:#6b5210}.t3{background:#ece2e2;color:#6b2f2f}
+ol.steps li{margin-bottom:8px}
+@media (max-width:900px){.sidebar{position:static;width:auto}main{margin:0;padding:30px 22px}}
+</style>
+<style>.done{background:#d4ecd9;color:#1f5446}.todo{background:#f3e8c8;color:#6b5210}</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">◐</div><div><strong>GTK 4 Live Theming</strong><small>Omarchy plan</small></div></div>
+  <nav>
+    <div class="nav-label">Background</div>
+    <a href="#goal">The goal</a>
+    <a href="#problem">Why GTK 4 apps don't follow themes</a>
+    <a href="#mechanism">How gtk4-live-css does it</a>
+    <div class="nav-label">What we built</div>
+    <a href="#part1">Part 1: gtk.css from the theme</a>
+    <div class="nav-label">Live reload</div>
+    <a href="#options">The options</a>
+    <a href="#option2">Option 2 downsides</a>
+    <a href="#option1">Option 1 downsides</a>
+    <a href="#safer">Making option 2 safer</a>
+    <div class="nav-label">The plan</div>
+    <a href="#plan">Steps</a>
+    <a href="#files">Files</a>
+    <a href="#undo">How to undo</a>
+  </nav>
+  <div class="sidebar-footer"><strong>Snapshot</strong>gtk4 4.24.1 · libadwaita 1.10.0<br>Written 2026-10-22<br>~/Projects/Omarchy GTK4 Theming</div>
+</aside>
+
+<main id="content">
+<div class="eyebrow">System notes · GTK 4 theming</div>
+<h1>GTK 4 apps that <em>follow</em> the theme</h1>
+<p class="lede">How the gtk4-live-css project makes open GTK 4 apps repaint when the theme changes, why we aren't installing it, and our own plan to get the same result on Omarchy without replacing a system package.</p>
+
+<h2 id="goal"><span class="num">01 · GOAL</span>The goal</h2>
+<p>When you switch Omarchy themes, the bar, terminals and Hyprland borders change straight away. GTK 4 apps like Nautilus don't. They keep stock Adwaita colours, and even with a custom stylesheet they only pick it up the next time they start. We want:</p>
+<ol class="steps">
+  <li>GTK 4 apps that use the current Omarchy theme's colours.</li>
+  <li>Windows that are already open to repaint when the theme changes, without restarting.</li>
+  <li>No replacing Arch's <code>gtk4</code> package.</li>
+</ol>
+
+<h2 id="problem"><span class="num">02 · THE PROBLEM</span>Why GTK 4 apps don't follow themes</h2>
+<ul>
+  <li><strong>Theme switching doesn't work for libadwaita apps.</strong> Most GTK 4 apps (Nautilus included) are built on libadwaita, and libadwaita sets GTK's theme name to <code>Adwaita-empty</code>. That means "install a GTK theme and switch to it" does nothing. We confirmed this string is in <code>/usr/lib/libadwaita-1.so.0</code> on this machine.</li>
+  <li><strong>The one file they do honour is read once.</strong> GTK 4 loads <code>~/.config/gtk-4.0/gtk.css</code> at the highest priority, above libadwaita's own styles, so it can recolour everything. But it reads the file only once, when the app starts, and never checks it again.</li>
+  <li><strong>Colour mode alone is too coarse.</strong> Omarchy already switches light/dark (<code>omarchy-theme-set-gnome</code>), and libadwaita does follow that live. But that only picks Adwaita light or dark, not the theme's actual colours.</li>
+</ul>
+
+<h2 id="mechanism"><span class="num">03 · RESEARCH</span>How gtk4-live-css does it</h2>
+<p><a href="https://github.com/saneaspect/gtk4-live-css">saneaspect/gtk4-live-css</a> is Arch's normal <code>gtk4</code> package rebuilt with one patch (about 120 lines) to <code>gtk/gtksettings.c</code>. It doesn't use a theme or a config trick. It changes GTK itself.</p>
+<ol class="steps">
+  <li>When GTK loads the user's <code>gtk.css</code> into its style provider, the patch keeps a pointer to that provider.</li>
+  <li>It starts a file watcher (<code>GFileMonitor</code>, which uses inotify) on the file. If the file is a symlink, it also watches whatever the link points at, so it catches both a swapped link and a rewritten file.</li>
+  <li>When the file changes, it waits 150 ms (theme switchers write several files in a row), then reloads the same provider with <code>gtk_css_provider_load_from_path()</code>.</li>
+  <li>GTK sees the provider changed and restyles every open window, the same as if the app had just started.</li>
+</ol>
+<p>The rest of the repo is packaging. A daily GitHub Action takes Arch's latest <code>gtk4</code> recipe, adds the patch, builds it, and publishes it as a pacman repo. The package <em>replaces</em> <code>gtk4</code>.</p>
+<div class="callout warn"><strong>Why we're not installing it:</strong> it swaps out a core system library for an unsigned, single-maintainer build. When the GTK developers change the code the patch touches, the daily build stops and you also stop getting GTK updates until the patch is fixed.</div>
+
+<h2 id="part1"><span class="num">04 · DONE</span>Part 1: gtk.css from the Omarchy theme</h2>
+<p>Omarchy already has a template system. <code>omarchy-theme-set-templates</code> renders every <code>~/.config/omarchy/themed/*.tpl</code> into the current theme folder, replacing placeholders like <code>{{ background }}</code> with values from the theme's <code>colors.toml</code>. So this part needed no code:</p>
+<ul>
+  <li><strong>A template</strong> at <code>~/.config/omarchy/themed/gtk.css.tpl</code> that overrides libadwaita's named colours (<code>@define-color window_bg_color</code>, <code>accent_bg_color</code>, sidebar, cards, popovers, dialogs, and the status colours). libadwaita 1.10 still builds its colours from these names, so overriding them recolours the apps.</li>
+  <li><strong>A symlink</strong> from <code>~/.config/gtk-4.0/gtk.css</code> to <code>~/.local/state/omarchy/current/theme/gtk.css</code>. Omarchy swaps the whole theme folder on each switch but keeps the same path, so the link always points at the current theme.</li>
+</ul>
+<p>Result: every GTK 4 app you start uses the theme's colours. We checked that the generated file has every placeholder filled in and the colours match <code>colors.toml</code>. Not done yet: looking at a GTK 4 app on screen, so some colour choices may need a tweak.</p>
+
+<h2 id="options"><span class="num">05 · LIVE RELOAD</span>The options</h2>
+<table>
+  <tr><th>Option</th><th>How it works</th><th>Good</th><th>Bad</th></tr>
+  <tr><td><strong>Patched gtk4</strong><br>(gtk4-live-css)</td><td>Rebuild GTK with a file watcher built in.</td><td>Works in every GTK 4 app, including Flatpaks once they're updated.</td><td>Replaces a core package. Breaks when GTK changes, and blocks GTK updates until it's fixed.</td></tr>
+  <tr><td><strong>1 · Restart apps</strong></td><td>A theme-set hook closes and reopens GTK apps (<code>nautilus -q</code>, ...).</td><td>About 3 lines. Nothing runs inside other programs.</td><td>Open windows and unfinished work are lost. Needs a list of apps. The switch looks jumpy.</td></tr>
+  <tr><td><strong>2 · Preload library</strong> <span class="tag t1">chosen</span></td><td>A small library we write gets loaded into GTK apps, watches <code>gtk.css</code> and repaints.</td><td>Real live switching. Uses only GTK's public functions, so GTK updates are very unlikely to break it.</td><td>Runs inside other programs, so a bug could crash them. Doesn't reach Flatpaks.</td></tr>
+  <tr><td><strong>3 · Do nothing</strong></td><td>Apps pick up the theme the next time they start.</td><td>Zero work.</td><td>Open windows keep the old colours.</td></tr>
+</table>
+
+<h2 id="option2"><span class="num">06 · TRADE-OFFS</span>Option 2 downsides, in plain words</h2>
+<p><code>LD_PRELOAD</code> is a Linux feature that says "load this extra library into a program before it starts". Our library checks whether the program is a GTK 4 app. If it is, it watches <code>gtk.css</code> and repaints the app's windows when the file changes. If it isn't, it does nothing.</p>
+<p>If we load it into <em>every</em> program (the simple version), the downsides are:</p>
+<ol class="steps">
+  <li><strong>It sits in every program.</strong> Your terminal, browser and everything else carry it, doing nothing. It costs a few KB per program.</li>
+  <li><strong>A bug could crash apps.</strong> Because it runs inside other programs, a mistake in our code could take down whatever it's loaded into. This is the real risk.</li>
+  <li><strong>Flatpak apps don't get it.</strong> They run in a sandbox that doesn't see the library.</li>
+  <li><strong>Warning noise.</strong> 32-bit programs (Steam, Wine) may print a harmless "wrong ELF class" warning.</li>
+  <li><strong>It's a hidden piece.</strong> Months later you might forget it's loaded when an app acts oddly.</li>
+  <li><strong>You need to log out and back in once</strong> for it to take effect.</li>
+</ol>
+
+<h2 id="option1"><span class="num">07 · TRADE-OFFS</span>Option 1 downsides, in plain words</h2>
+<ol class="steps">
+  <li><strong>You lose what's open:</strong> windows, tabs, the folders you were in, a half-done file copy, unsaved text.</li>
+  <li><strong>It doesn't always reopen cleanly.</strong> Windows can come back in the wrong place, or not at all.</li>
+  <li><strong>You have to list the apps.</strong> New GTK apps stay in old colours until you add them.</li>
+  <li><strong>The switch looks jumpy.</strong> GTK windows vanish and pop back up.</li>
+  <li><strong>Some apps shouldn't be restarted</strong>, like an installer halfway through, so they'd have to stay in old colours.</li>
+</ol>
+<p>Its upside is that nothing runs inside other programs, so it can't cause mystery crashes.</p>
+
+<h2 id="safer"><span class="num">08 · SAFETY</span>Making option 2 safer</h2>
+<table>
+  <tr><th>Measure</th><th>What it means</th><th>Which risk it reduces</th></tr>
+  <tr><td><strong>Load it only into GTK apps</strong></td><td>Instead of loading it into everything, small per-app overrides load it only when, say, Nautilus starts.</td><td>"In every program", the warning noise, "hidden piece". Limits any crash to those apps.</td></tr>
+  <tr><td><strong>No GTK, no action</strong></td><td>If the program isn't GTK 4, it returns immediately.</td><td>Crashes in non-GTK programs.</td></tr>
+  <tr><td><strong>Never pulls in libraries</strong></td><td>It isn't linked against GTK or GLib. It only finds functions that are already loaded (<code>dlsym</code>).</td><td>Changing how other programs behave just by being there.</td></tr>
+  <tr><td><strong>Missing pieces mean no action</strong></td><td>If any GTK function it needs can't be found, it quietly does nothing.</td><td>Crashes after GTK changes.</td></tr>
+  <tr><td><strong>Only works when GTK is ready</strong></td><td>All work runs on GTK's own main loop, never from a background thread.</td><td>Timing and thread bugs.</td></tr>
+  <tr><td><strong>Bad CSS is harmless</strong></td><td>A broken or missing <code>gtk.css</code> just makes GTK log a warning.</td><td>Crashes from bad files.</td></tr>
+  <tr><td><strong>Off switch</strong></td><td><code>GTK_LIVE_CSS=0</code> skips it for one run. Deleting the overrides turns it off for good.</td><td>Getting stuck with a problem.</td></tr>
+  <tr><td><strong>Try on Nautilus first</strong></td><td>Use it on Nautilus alone for a few days before adding other apps.</td><td>Surprises spreading to many apps.</td></tr>
+</table>
+<div class="callout"><strong>What's left:</strong> a bug in our ~60 lines could still crash an app it's loaded into. While we test, that's limited to Nautilus, and undoing it means deleting two files.</div>
+
+<h2 id="plan"><span class="num">09 · PLAN</span>Steps</h2>
+<ol class="steps">
+  <li><span class="tag done">done</span> Generate <code>gtk.css</code> from each Omarchy theme and link it into <code>~/.config/gtk-4.0/</code> (section 04).</li>
+  <li><span class="tag done">done</span> Write the library (<code>gtk-live-css.c</code>, about 60 lines of C) with all the safety measures above. When it's loaded into a GTK 4 app, it:
+    <ul>
+      <li>waits until GTK has opened its display;</li>
+      <li>adds its own CSS provider, loading <code>~/.config/gtk-4.0/gtk.css</code> at a priority just above GTK's own copy, so our fresh copy beats GTK's stale one;</li>
+      <li>watches the file (and the symlink's target), waits 150 ms after a change, then reloads, the same as the patch.</li>
+    </ul>
+  </li>
+  <li><span class="tag done">done</span> Build it to <code>~/.local/lib/gtk-live-css.so</code> with the system <code>gcc</code>.</li>
+  <li><span class="tag done">done</span> Enable it for Nautilus only. Nautilus is usually started over D-Bus (<code>DBusActivatable=true</code>), so we override its D-Bus service file. We also override its launcher (<code>.desktop</code>) file for launchers that run the command directly. Both just add <code>env LD_PRELOAD=~/.local/lib/gtk-live-css.so</code> in front of the normal command.</li>
+  <li><span class="tag done">done</span> Quit Nautilus once (<code>nautilus -q</code>), reopen it, switch themes and watch it repaint. Confirmed working on 2026-10-22: library loaded, both folders watched, colours look right. Now: use it for a few days.</li>
+  <li><span class="tag todo">later</span> If it's solid, add overrides for other GTK 4 apps, or decide whether to load it everywhere.</li>
+</ol>
+
+<h3>Lesson from testing</h3>
+<p>The first test failed because <code>LD_PRELOAD</code> applies to every program in a chain, including wrappers like <code>timeout</code> or <code>env</code>. The library removed <code>LD_PRELOAD</code> inside the wrapper, so the real app never got it. Fix: it now leaves the environment untouched unless it's actually inside a GTK 4 app.</p>
+
+<h3>Lesson from the first real launch</h3>
+<p>After the overrides were in place, Nautilus still started without the library. Omarchy's Super+Shift+F runs <code>omarchy-launch-nautilus</code>, which starts <code>nautilus</code> by name through <code>uwsm-app</code>. That skips both the <code>.desktop</code> file and D-Bus. A <code>~/.local/bin/nautilus</code> wrapper wouldn't help either, because <code>~/.local/bin</code> comes after <code>/usr/bin</code> in Hyprland's PATH. Fix: the two keybindings now run Omarchy's launch scripts with <code>env LD_PRELOAD=...</code> in front. The variable passes through bash, <code>setsid</code> and <code>uwsm-app</code> untouched (none of them are GTK) and reaches Nautilus.</p>
+
+<h2 id="files"><span class="num">10 · FILES</span>Files</h2>
+<h3>The project: <code>~/Projects/Omarchy GTK4 Theming/</code></h3>
+<p>This folder is the source of truth for everything. <code>install</code> copies or builds from here, so the folder can be moved later without breaking anything that's installed.</p>
+<table>
+  <tr><th>File</th><th>Purpose</th></tr>
+  <tr><td><code>install</code></td><td>Sets everything up: copies the template, links <code>gtk.css</code>, builds the library, writes the Nautilus overrides and keybindings. Safe to re-run. Re-run it after a Nautilus update, because it regenerates the override files from the system copies so they don't go out of date.</td></tr>
+  <tr><td><code>uninstall</code></td><td>Removes everything <code>install</code> wrote. It only deletes override files that contain <code>gtk-live-css</code>, never a user's own file of the same name.</td></tr>
+  <tr><td><code>test</code></td><td>Self-check: opens a test GTK 4 window, does an Omarchy-style theme swap and an in-place rewrite, and checks the open window follows both. Also checks <code>LD_PRELOAD</code> isn't passed on to child programs. Re-run after GTK updates.</td></tr>
+  <tr><td><code>src/gtk-live-css.c</code></td><td>Source code for the live reload library.</td></tr>
+  <tr><td><code>src/test.c</code></td><td>The test GTK 4 program used by <code>test</code>.</td></tr>
+  <tr><td><code>themed/gtk.css.tpl</code></td><td>Template that maps Omarchy colours to libadwaita's named colours. Edit this one, then re-run <code>install</code>.</td></tr>
+  <tr><td><code>docs/gtk-live-theming.html</code></td><td>This document.</td></tr>
+  <tr><td><code>README.md</code></td><td>Short overview, install and uninstall.</td></tr>
+</table>
+
+<h3>What <code>install</code> writes on the system</h3>
+<table>
+  <tr><th>File</th><th>Action</th><th>Purpose</th></tr>
+  <tr><td><code>~/.config/omarchy/themed/gtk.css.tpl</code></td><td>Copied from the project</td><td>Omarchy renders this into the theme folder on every theme switch.</td></tr>
+  <tr><td><code>~/.local/state/omarchy/current/theme/gtk.css</code></td><td>Generated by Omarchy</td><td>The rendered stylesheet. Rebuilt by <code>omarchy-theme-set</code> on every theme switch. Never edit by hand.</td></tr>
+  <tr><td><code>~/.config/gtk-4.0/gtk.css</code></td><td>Symlink</td><td>The file GTK 4 reads. Points at the rendered stylesheet above. A real file already there is backed up first.</td></tr>
+  <tr><td><code>~/.local/lib/gtk-live-css.so</code></td><td>Built from <code>src/</code></td><td>The compiled library that gets loaded into Nautilus. The build fails if it would accidentally link against GTK or GLib.</td></tr>
+  <tr><td><code>~/.local/share/dbus-1/services/org.gnome.Nautilus.service</code></td><td>Override</td><td>The system file with <code>LD_PRELOAD</code> added. Covers D-Bus starts ("Show in folder", some launchers).</td></tr>
+  <tr><td><code>~/.local/share/applications/org.gnome.Nautilus.desktop</code></td><td>Override</td><td>The system launcher file with <code>LD_PRELOAD</code> added to <code>Exec=</code>.</td></tr>
+  <tr><td><code>~/.config/hypr/bindings.lua</code></td><td>Block added between <code>-- &gt;&gt;&gt; omarchy-gtk4-theming &gt;&gt;&gt;</code> markers</td><td>Rebinds Super+Shift+F and Super+Alt+Shift+F to run Omarchy's own <code>omarchy-launch-nautilus</code> scripts with <code>LD_PRELOAD</code> set. This is the main way Nautilus starts on Omarchy.</td></tr>
+</table>
+<p>No system files under <code>/usr</code> or <code>/etc</code> are changed, and no packages are installed or replaced.</p>
+
+<h2 id="undo"><span class="num">11 · UNDO</span>How to undo</h2>
+<pre><code>~/Projects/"Omarchy GTK4 Theming"/uninstall
+nautilus -q      # drop the library from the running Nautilus
+
+# turn it off for a single run instead
+GTK_LIVE_CSS=0 nautilus</code></pre>
+</main>
+</body>
+</html>
