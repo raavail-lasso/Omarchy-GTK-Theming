@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 # Install Omarchy GTK4 Theming for the current user. Safe to re-run; re-run it
-# after a Nautilus update to refresh the override files.
+# after an app update to refresh the override files.
 set -euo pipefail
+
+# GTK 4 apps that repaint live on theme switch, by .desktop file name (without
+# .desktop). Add one, re-run ./install, restart the app. Only apps compiled
+# against GTK 4 work; Python/JS apps load GTK too late for the library.
+APPS=(
+  org.gnome.Nautilus
+  org.gnome.Papers
+  transmission-gtk
+  dev.tensaku.Tensaku
+)
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB="$HOME/.local/lib/gtk-live-css.so"
 TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
 GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
 THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
-DBUS="$HOME/.local/share/dbus-1/services/org.gnome.Nautilus.service"
-DESKTOP="$HOME/.local/share/applications/org.gnome.Nautilus.desktop"
+DBUS_DIR="$HOME/.local/share/dbus-1/services"
+DESKTOP_DIR="$HOME/.local/share/applications"
 BINDINGS="$HOME/.config/hypr/bindings.lua"
 BEGIN="-- >>> omarchy-gtk4-theming >>>"
 END="-- <<< omarchy-gtk4-theming <<<"
@@ -47,24 +57,37 @@ gcc -shared -fPIC -O2 -Wall -Wl,-z,defs $(pkg-config --cflags gtk4) \
 mv "$LIB.tmp" "$LIB"
 step "built $LIB"
 
-# --- load it into Nautilus --------------------------------------------------
-# D-Bus activation ("Show in folder", launchers that honour DBusActivatable)
-mkdir -p "$(dirname "$DBUS")"
-{ echo "# $NOTE"
-  sed "s|^Exec=/usr/bin/nautilus|Exec=/usr/bin/env LD_PRELOAD=$LIB /usr/bin/nautilus|" \
-    /usr/share/dbus-1/services/org.gnome.Nautilus.service; } > "$DBUS"
+# --- load it into the apps --------------------------------------------------
+# Each app gets a copy of its .desktop file (app launcher, file associations)
+# and, if it has one, its D-Bus service file ("Show in folder", launchers that
+# honour DBusActivatable), with LD_PRELOAD put in front of every Exec= line.
+mkdir -p "$DBUS_DIR" "$DESKTOP_DIR"
+
+# Drop last run's overrides first, so apps removed from APPS are cleaned up.
+{ grep -ls gtk-live-css "$DBUS_DIR"/*.service "$DESKTOP_DIR"/*.desktop || true; } | xargs -r -d "\n" rm -f
+
+# override <system file> <user file> <Exec prefix>
+override() {
+  [[ -f $1 ]] || return 0
+  if [[ -e $2 ]]; then
+    step "WARNING: skipped $(basename "$2"), you already have your own override"
+    return 1
+  fi
+  { echo "# $NOTE"; sed "s|^Exec=|Exec=$3 |" "$1"; } > "$2"
+}
+
+for app in "${APPS[@]}"; do
+  if [[ ! -f /usr/share/applications/$app.desktop ]]; then
+    step "WARNING: $app.desktop not found, skipped"
+    continue
+  fi
+  override "/usr/share/applications/$app.desktop" "$DESKTOP_DIR/$app.desktop" "env LD_PRELOAD=$LIB" || continue
+  override "/usr/share/dbus-1/services/$app.service" "$DBUS_DIR/$app.service" "/usr/bin/env LD_PRELOAD=$LIB" || true
+  step "live reload enabled for $app"
+done
+
 busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1 || true
-
-# App launchers that run Exec= directly
-mkdir -p "$(dirname "$DESKTOP")"
-{ echo "# $NOTE"
-  sed "s|^Exec=nautilus|Exec=env LD_PRELOAD=$LIB nautilus|" \
-    /usr/share/applications/org.gnome.Nautilus.desktop; } > "$DESKTOP"
-update-desktop-database "$(dirname "$DESKTOP")" 2>/dev/null || true
-
-grep -q LD_PRELOAD "$DBUS" && grep -q LD_PRELOAD "$DESKTOP" ||
-  step "WARNING: Nautilus changed its Exec lines; an override did not take. See docs."
-step "installed Nautilus D-Bus and launcher overrides"
+update-desktop-database "$DESKTOP_DIR" 2>/dev/null || true
 
 # Omarchy's Super+Shift+F starts nautilus by name, skipping both files above.
 if [[ -f $BINDINGS ]]; then

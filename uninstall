@@ -7,14 +7,11 @@ LIB="$HOME/.local/lib/gtk-live-css.so"
 TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
 GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
 THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
-DBUS="$HOME/.local/share/dbus-1/services/org.gnome.Nautilus.service"
-DESKTOP="$HOME/.local/share/applications/org.gnome.Nautilus.desktop"
 BINDINGS="$HOME/.config/hypr/bindings.lua"
 
 # Only remove files we wrote, never a user's own override of the same name.
-for f in "$DBUS" "$DESKTOP"; do
-  grep -qs gtk-live-css "$f" && rm -f "$f"
-done
+{ grep -ls gtk-live-css "$HOME"/.local/share/dbus-1/services/*.service \
+  "$HOME"/.local/share/applications/*.desktop || true; } | xargs -r -d "\n" rm -f
 busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1 || true
 
 if [[ -f $BINDINGS ]]; then
@@ -25,4 +22,4 @@ fi
 [[ $(readlink "$GTK_CSS" 2>/dev/null) == "$THEME_CSS" ]] && rm -f "$GTK_CSS"
 rm -f "$TPL" "$THEME_CSS" "$LIB"
 
-printf 'Omarchy GTK4 Theming removed. Restart Nautilus (nautilus -q) to drop the live reload.\n'
+printf 'Omarchy GTK4 Theming removed. Restart open GTK 4 apps (e.g. nautilus -q) to drop the live reload.\n'

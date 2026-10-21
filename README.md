@@ -14,7 +14,8 @@ colours. Omarchy renders it into the theme folder on every switch, and
 `~/.config/gtk-4.0/gtk.css` links there.
 
 **Live reload.** GTK reads that file once, at startup. A tiny library
-(`src/gtk-live-css.c`), loaded into Nautilus with `LD_PRELOAD`, watches the
+(`src/gtk-live-css.c`), loaded into the apps listed in `install` with
+`LD_PRELOAD`, watches the
 file and reloads it when it changes, so open windows repaint about 150 ms
 after a switch. It's the same idea as the
 [gtk4-live-css](https://github.com/saneaspect/gtk4-live-css) patch, but done
@@ -22,8 +23,8 @@ from outside GTK using only public API, so GTK updates are very unlikely to
 break it.
 
 The library is defensive: it isn't linked against GTK or GLib, does nothing
-outside GTK 4 apps, and doesn't pass `LD_PRELOAD` on to programs Nautilus
-opens. `GTK_LIVE_CSS=0` turns it off for one run.
+outside GTK 4 apps, and doesn't pass `LD_PRELOAD` on to programs those apps
+open. `GTK_LIVE_CSS=0` turns it off for one run.
 
 Full write-up, including the options considered and why:
 [docs/gtk-live-theming.html](docs/gtk-live-theming.html)
@@ -44,8 +45,42 @@ Check it loaded (should print a number above 0):
 grep -c gtk-live-css /proc/$(pgrep -x nautilus)/maps
 ```
 
-Re-run `./install` after a Nautilus update to refresh its override files, and
+Re-run `./install` after an app update to refresh its override files, and
 after editing `themed/gtk.css.tpl`.
+
+## Adding apps
+
+Live reload is enabled per app. The list is at the top of `install`:
+
+```bash
+APPS=(
+  org.gnome.Nautilus
+  org.gnome.Papers
+  transmission-gtk
+  dev.tensaku.Tensaku
+)
+```
+
+Each entry is a `.desktop` file name from `/usr/share/applications`, without
+`.desktop`. Add one, re-run `./install`, and restart the app. For each app,
+`install` writes a copy of its `.desktop` file (and its D-Bus service file, if
+it has one) with `LD_PRELOAD` in front of every `Exec=` line. Taking an app off
+the list and re-running removes its override. If you already have your own
+override of the same name, `install` skips that app rather than overwrite it.
+
+To find GTK 4 apps on your system:
+
+```bash
+for f in /usr/share/applications/*.desktop; do
+  grep -q '^NoDisplay=true' "$f" && continue
+  exe=$(sed -n 's/^Exec=//p' "$f" | head -1 | awk '{print $1}')
+  p=$(command -v "$exe") && ldd "$p" 2>/dev/null | grep -q libgtk-4 && basename "$f" .desktop
+done
+```
+
+Only apps compiled against GTK 4 work. Python and JavaScript apps load GTK
+after they start, too late for the library; they still get the theme colours,
+just not live.
 
 ## Test
 
@@ -75,12 +110,12 @@ docs/                   design notes and decisions
 
 ## Limits
 
-- **Live reload is Nautilus-only for now.** Other GTK 4 apps get the theme
-  colours when they start, but need their own override to repaint live.
+- **Live reload is per app** (see Adding apps). GTK 4 apps not on the list get
+  the theme colours when they start, but don't repaint live.
 - **Flatpak apps** don't see the library (sandbox), so they won't repaint live.
-- **Ways of starting Nautilus:** Super+Shift+F is confirmed. The app launcher
-  and "Show in folder" go through the `.desktop` and D-Bus overrides, which
-  aren't confirmed yet.
+- **An app started some other way won't have it**, e.g. a custom keybinding
+  or script that runs the binary directly. Nautilus's Omarchy keybindings are
+  handled by `install`.
 
 ## License
 
