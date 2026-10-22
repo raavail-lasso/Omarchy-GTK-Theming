@@ -1,4 +1,4 @@
-/* Omarchy GTK4 Theming: GTK 3 stylesheet, rendered into the theme folder on
+/* Omarchy GTK Theming: GTK 3 stylesheet, rendered into the theme folder on
    every theme switch. ~/.config/gtk-3.0/gtk.css links to the result.
    GTK 3 loads this above whatever theme is active, so it also covers libhandy
    apps (Evince, Disks), which force GTK's built-in Adwaita, and light themes,

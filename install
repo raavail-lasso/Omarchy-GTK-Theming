@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Omarchy GTK4 Theming for the current user. Safe to re-run; re-run it
+# Install Omarchy GTK Theming for the current user. Safe to re-run; re-run it
 # after an app update to refresh the override files.
 set -euo pipefail
 
@@ -20,20 +20,20 @@ TPL3="$HOME/.config/omarchy/themed/gtk3.css.tpl"
 GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
 GTK3_CSS="$HOME/.config/gtk-3.0/gtk.css"
 THEME_CSS3="$HOME/.local/state/omarchy/current/theme/gtk3.css"
-DATA="$HOME/.local/share/omarchy-gtk4-theming"
+DATA="$HOME/.local/share/omarchy-gtk-theming"
 THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
 THEMES_DIR="$HOME/.local/share/themes"
 OLD_HOOK="$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
 DBUS_DIR="$HOME/.local/share/dbus-1/services"
 DESKTOP_DIR="$HOME/.local/share/applications"
 BINDINGS="$HOME/.config/hypr/bindings.lua"
-BEGIN="-- >>> omarchy-gtk4-theming >>>"
-END="-- <<< omarchy-gtk4-theming <<<"
-NOTE="Omarchy GTK4 Theming (gtk-live-css). Remove with $SRC/uninstall"
+BEGIN="-- >>> omarchy-gtk-theming >>>"
+END="-- <<< omarchy-gtk-theming <<<"
+NOTE="Omarchy GTK Theming (gtk-live-css). Remove with $SRC/uninstall"
 
 step() { printf '  %s\n' "$*"; }
 
-printf '\nInstalling Omarchy GTK4 Theming\n\n'
+printf '\nInstalling Omarchy GTK Theming\n\n'
 
 # --- dependencies -----------------------------------------------------------
 command -v gcc >/dev/null && pkg-config --exists gtk4 || {
@@ -111,6 +111,9 @@ step "created GTK 4 themes Adwaita and Adwaita-dark in $THEMES_DIR (adw-gtk3 + t
 # Earlier versions used Omarchy-GTK themes plus a theme-set hook, which ran
 # after every other hook and left apps on the built-in theme for seconds.
 rm -f "$OLD_HOOK"
+# ...and before the project was renamed, these names.
+[[ -f $BINDINGS ]] && sed -i '/^-- >>> omarchy-gtk4-theming >>>$/,/^-- <<< omarchy-gtk4-theming <<<$/d' "$BINDINGS"
+rm -rf "$HOME/.local/share/omarchy-gtk4-theming"
 for t in Omarchy-GTK Omarchy-GTK-dark; do
   grep -qs gtk-live-css "$THEMES_DIR/$t/gtk-4.0/gtk.css" && rm -rf "${THEMES_DIR:?}/$t"
 done
@@ -172,10 +175,15 @@ EOF
 fi
 
 # --- render for the current theme -------------------------------------------
-if [[ ! -f $THEME_CSS || ! -f $THEME_CSS3 ]]; then
+if [[ ! -f $THEME_CSS ]]; then
   omarchy-theme-refresh >/dev/null 2>&1 || true
   step "rendered gtk.css for the current theme"
 fi
+# gtk3.css only depends on the theme's mode, so render it here too: keeps the
+# current theme in step with the template without a full theme refresh.
+mode=$(omarchy-theme-color --file "$(dirname "$THEME_CSS")/colors.toml" mode)
+sed "s/{{ mode }}/$mode/" "$TPL3" > "$THEME_CSS3"
+step "rendered gtk3.css for the current theme ($mode)"
 # Let Omarchy set the GTK theme name (Adwaita / Adwaita-dark by theme mode),
 # which now resolves to ours.
 omarchy-theme-set-gnome 2>/dev/null || true

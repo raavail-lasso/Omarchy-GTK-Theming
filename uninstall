@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Remove Omarchy GTK4 Theming. GTK 4 apps go back to stock Adwaita colours the
+# Remove Omarchy GTK Theming. GTK 4 apps go back to stock Adwaita colours the
 # next time they start.
 set -euo pipefail
 
@@ -15,7 +15,8 @@ BINDINGS="$HOME/.config/hypr/bindings.lua"
 busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1 || true
 
 if [[ -f $BINDINGS ]]; then
-  sed -i '/^-- >>> omarchy-gtk4-theming >>>$/,/^-- <<< omarchy-gtk4-theming <<<$/d' "$BINDINGS"
+  sed -i -e '/^-- >>> omarchy-gtk-theming >>>$/,/^-- <<< omarchy-gtk-theming <<<$/d' \
+    -e '/^-- >>> omarchy-gtk4-theming >>>$/,/^-- <<< omarchy-gtk4-theming <<<$/d' "$BINDINGS"
   hyprctl reload >/dev/null 2>&1 || true
 fi
 
@@ -24,7 +25,7 @@ GTK3_CSS="$HOME/.config/gtk-3.0/gtk.css" THEME_CSS3="${THEME_CSS%.css}3.css"
 [[ $(readlink "$GTK3_CSS" 2>/dev/null) == "$THEME_CSS3" ]] && rm -f "$GTK3_CSS"
 rm -f "$TPL" "${TPL%gtk.css.tpl}gtk3.css.tpl" "$THEME_CSS" "$THEME_CSS3" "$LIB" \
   "$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
-rm -rf "$HOME/.local/share/omarchy-gtk4-theming"
+rm -rf "$HOME/.local/share/omarchy-gtk-theming" "$HOME/.local/share/omarchy-gtk4-theming"
 
 for t in Adwaita Adwaita-dark Omarchy-GTK Omarchy-GTK-dark; do
   grep -qs gtk-live-css "$HOME/.local/share/themes/$t/gtk-4.0/gtk.css" && rm -rf "$HOME/.local/share/themes/$t"
@@ -32,4 +33,4 @@ done
 # Hand the GTK theme back to Omarchy (Adwaita / Adwaita-dark by theme mode).
 omarchy-theme-set-gnome 2>/dev/null || true
 
-printf 'Omarchy GTK4 Theming removed. Restart open GTK 4 apps (e.g. nautilus -q) to drop the live reload.\n'
+printf 'Omarchy GTK Theming removed. Restart open GTK 4 apps (e.g. nautilus -q) to drop the live reload.\n'

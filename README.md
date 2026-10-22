@@ -1,7 +1,8 @@
-# Omarchy GTK4 Theming
+# Omarchy GTK Theming
 
-GTK 4 apps (Nautilus and friends) that use your Omarchy theme's colours, and
-**repaint live when you switch themes**, without replacing Arch's `gtk4`.
+GTK 4 and GTK 3 apps (Nautilus, Evince and friends) that use your Omarchy
+theme's colours, with GTK 4 apps that **repaint live when you switch themes**,
+without replacing Arch's `gtk4`.
 
 ## How it works
 
@@ -49,8 +50,8 @@ map** section of that page. It has a flow diagram and an annotated mock window.
 ## Install
 
 ```bash
-git clone git@github.com:raavail-lasso/Omarchy-GTK4-Theming.git
-cd Omarchy-GTK4-Theming && ./install
+git clone git@github.com:raavail-lasso/Omarchy-GTK-Theming.git
+cd Omarchy-GTK-Theming && ./install
 nautilus -q          # then reopen with Super+Shift+F
 ```
 
