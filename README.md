@@ -43,6 +43,9 @@ open. `GTK_LIVE_CSS=0` turns it off for one run.
 Full write-up, including the options considered and why:
 [docs/gtk-live-theming.html](docs/gtk-live-theming.html)
 
+To see which Omarchy colour paints which part of a window, open the **Colour
+map** section of that page. It has a flow diagram and an annotated mock window.
+
 ## Install
 
 ```bash

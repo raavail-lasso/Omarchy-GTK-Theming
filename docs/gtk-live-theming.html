@@ -33,7 +33,12 @@ td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
 ol.steps li{margin-bottom:8px}
 @media (max-width:900px){.sidebar{position:static;width:auto}main{margin:0;padding:30px 22px}}
 </style>
-<style>.done{background:#d4ecd9;color:#1f5446}.todo{background:#f3e8c8;color:#6b5210}</style>
+<style>.done{background:#d4ecd9;color:#1f5446}.todo{background:#f3e8c8;color:#6b5210}
+figure.diagram{margin:18px 0 26px;max-width:960px}figure.diagram svg{width:100%;height:auto;display:block;background:var(--card);border:1px solid var(--line);border-radius:10px}
+figure.diagram figcaption{font-size:13px;color:var(--muted);margin-top:8px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #0003;vertical-align:-2px;margin-right:6px}
+.mk{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#e9a747;color:#202b2b;font:bold 12px var(--mono)}
+td code.n{display:inline-block;margin:1px 2px;font-size:12px}</style>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
@@ -54,6 +59,7 @@ ol.steps li{margin-bottom:8px}
     <div class="nav-label">The plan</div>
     <a href="#plan">Steps</a>
     <a href="#gtk3">GTK 3 and non-libadwaita apps</a>
+    <a href="#colours">Colour map</a>
     <a href="#files">Files</a>
     <a href="#undo">How to undo</a>
   </nav>
@@ -210,7 +216,123 @@ ol.steps li{margin-bottom:8px}
   <tr><td>Flatpak</td><td>none here</td><td>No (sandbox)</td><td>No</td></tr>
 </table>
 
-<h2 id="files"><span class="num">11 · FILES</span>Files</h2>
+<h2 id="colours"><span class="num">11 · COLOUR MAP</span>Which colour affects what</h2>
+<p>Everything starts from the theme's <code>colors.toml</code>. <code>themed/gtk.css.tpl</code> turns nine of its colours into GTK's named colours, and that one <code>gtk.css</code> is used by every kind of app.</p>
+<figure class="diagram">
+<svg viewBox="0 0 960 330" role="img" aria-labelledby="flow-t flow-d" font-family="system-ui, sans-serif">
+<title id="flow-t">How theme colours reach GTK apps</title>
+<desc id="flow-d">colors.toml is rendered into gtk.css. gtk.css reaches GTK 4 libadwaita apps through ~/.config/gtk-4.0/gtk.css, GTK 4 apps without libadwaita through the Adwaita and Adwaita-dark themes on top of adw-gtk3, and GTK 3 apps through gtk3.css linked from ~/.config/gtk-3.0/gtk.css on top of adw-gtk3. The theme mode picks light or dark adw-gtk3.</desc>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6764"/></marker></defs>
+<g font-size="13" fill="#202b2b">
+  <rect x="14" y="125" width="160" height="66" rx="9" fill="#e3efe6" stroke="#227363"/>
+  <text x="94" y="152" text-anchor="middle" font-weight="700">colors.toml</text>
+  <text x="94" y="172" text-anchor="middle" font-size="12" fill="#5c6764">the Omarchy theme</text>
+
+  <rect x="14" y="238" width="160" height="56" rx="9" fill="#fbf0dc" stroke="#d79a2b" stroke-dasharray="4 3"/>
+  <text x="94" y="262" text-anchor="middle" font-weight="700">mode</text>
+  <text x="94" y="280" text-anchor="middle" font-size="12" fill="#5c6764">light or dark</text>
+
+  <rect x="226" y="125" width="180" height="66" rx="9" fill="#fff" stroke="#227363"/>
+  <text x="316" y="152" text-anchor="middle" font-weight="700">gtk.css</text>
+  <text x="316" y="172" text-anchor="middle" font-size="12" fill="#5c6764">@define-color names</text>
+
+  <rect x="460" y="20" width="250" height="66" rx="9" fill="#fff" stroke="#dfe3da"/>
+  <text x="585" y="47" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12">~/.config/gtk-4.0/gtk.css</text>
+  <text x="585" y="67" text-anchor="middle" font-size="12" fill="#5c6764">loaded above libadwaita's styles</text>
+
+  <rect x="460" y="125" width="250" height="66" rx="9" fill="#fff" stroke="#dfe3da"/>
+  <text x="585" y="150" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12">themes/Adwaita{,-dark}</text>
+  <text x="585" y="170" text-anchor="middle" font-size="12" fill="#5c6764">adw-gtk3 + gtk.css + accent fix</text>
+
+  <rect x="460" y="230" width="250" height="66" rx="9" fill="#fff" stroke="#dfe3da"/>
+  <text x="585" y="255" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12">gtk3.css → ~/.config/gtk-3.0/</text>
+  <text x="585" y="275" text-anchor="middle" font-size="12" fill="#5c6764">adw-gtk3 (by mode) + gtk.css</text>
+
+  <rect x="760" y="20" width="186" height="66" rx="9" fill="#182e2b"/>
+  <text x="853" y="42" text-anchor="middle" font-weight="700" fill="#edf5ee">GTK 4 + libadwaita</text>
+  <text x="853" y="60" text-anchor="middle" font-size="12" fill="#b7d6be">Nautilus, Papers</text>
+  <text x="853" y="77" text-anchor="middle" font-size="11" fill="#e9a747">live (library)</text>
+
+  <rect x="760" y="125" width="186" height="66" rx="9" fill="#182e2b"/>
+  <text x="853" y="147" text-anchor="middle" font-weight="700" fill="#edf5ee">GTK 4, no libadwaita</text>
+  <text x="853" y="165" text-anchor="middle" font-size="12" fill="#b7d6be">Transmission, Tensaku</text>
+  <text x="853" y="182" text-anchor="middle" font-size="11" fill="#e9a747">live (library)</text>
+
+  <rect x="760" y="230" width="186" height="66" rx="9" fill="#182e2b"/>
+  <text x="853" y="252" text-anchor="middle" font-weight="700" fill="#edf5ee">GTK 3</text>
+  <text x="853" y="270" text-anchor="middle" font-size="12" fill="#b7d6be">Evince, Disks</text>
+  <text x="853" y="287" text-anchor="middle" font-size="11" fill="#e9a747">when the app starts</text>
+</g>
+<g stroke="#5c6764" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+  <path d="M174 158H222"/>
+  <path d="M406 150C430 150 430 53 456 53"/>
+  <path d="M406 158H456"/>
+  <path d="M406 166C430 166 430 263 456 263"/>
+  <path d="M710 53H756"/><path d="M710 158H756"/><path d="M710 263H756"/>
+</g>
+<g stroke="#d79a2b" stroke-width="1.4" fill="none" stroke-dasharray="4 3" marker-end="url(#ar)">
+  <path d="M174 258C320 258 330 210 456 180"/>
+  <path d="M174 272C320 272 330 270 456 270"/>
+</g>
+<text x="316" y="115" text-anchor="middle" font-size="11" fill="#5c6764" font-family="system-ui, sans-serif">rendered on every theme switch</text>
+<text x="300" y="312" text-anchor="middle" font-size="11" fill="#9a6a12" font-family="system-ui, sans-serif">mode picks light or dark adw-gtk3</text>
+</svg>
+<figcaption>One <code>gtk.css</code> reaches all three kinds of app. Only the base underneath differs: libadwaita's own styles, or adw-gtk3 (light or dark, by the theme's mode).</figcaption>
+</figure>
+<h3>From Omarchy colour to window</h3>
+<figure class="diagram">
+<svg viewBox="0 0 960 420" role="img" aria-labelledby="win-t win-d" font-family="system-ui, sans-serif">
+<title id="win-t">Which theme colour paints which part of a window</title>
+<desc id="win-d">A mock file manager window painted with the Aether theme's colours. Numbered markers match the table below: 1 background for the window and header bar, 2 dark_background for the content view, 3 darker_background for the sidebar, 4 lighter_background for cards and popovers, 5 foreground for text, 6 accent for suggested buttons, switches and links, 7 red, 8 green and 9 yellow for destructive, success and warning states.</desc>
+<rect x="0" y="0" width="960" height="420" fill="#f6f5f0"/>
+<rect x="20" y="16" width="920" height="388" rx="14" fill="#0A0E11" stroke="#0004"/>
+<line x1="20" y1="66" x2="940" y2="66" stroke="#232629"/>
+<text x="480" y="47" text-anchor="middle" font-size="15" font-weight="700" fill="#DED4BC">Home</text>
+<rect x="808" y="28" width="110" height="28" rx="7" fill="#5a8990"/>
+<text x="863" y="47" text-anchor="middle" font-size="13" font-weight="700" fill="#0A0E11">Open</text>
+
+<path d="M20 66H230V404H34A14 14 0 0 1 20 390Z" fill="#050709"/>
+<rect x="32" y="80" width="186" height="30" rx="7" fill="#DED4BC" fill-opacity=".1"/>
+<g font-size="13" fill="#DED4BC"><text x="48" y="100">Home</text><text x="48" y="134">Documents</text><text x="48" y="164">Downloads</text><text x="48" y="194">Pictures</text></g>
+
+<path d="M230 66H940V390A14 14 0 0 1 926 404H230Z" fill="#080b0d"/>
+<g font-size="13" fill="#DED4BC"><text x="260" y="98">notes.txt</text><text x="260" y="126">report.pdf</text><text x="260" y="154">photo.jpg</text></g>
+<text x="420" y="126" font-size="13" fill="#5a8990" text-decoration="underline">Learn more</text>
+
+<rect x="260" y="182" width="330" height="96" rx="12" fill="#232629"/>
+<text x="282" y="212" font-size="13" font-weight="700" fill="#DED4BC">Show hidden files</text>
+<text x="282" y="234" font-size="12" fill="#DED4BC" fill-opacity=".7">A card / boxed list row</text>
+<rect x="520" y="200" width="48" height="26" rx="13" fill="#5a8990"/><circle cx="555" cy="213" r="10" fill="#fff"/>
+<text x="282" y="262" font-size="12" fill="#DED4BC" fill-opacity=".7">Dialogs use the same colour</text>
+
+<path d="M856 66l8 -8 8 8" fill="#232629"/>
+<rect x="752" y="66" width="176" height="112" rx="10" fill="#232629" stroke="#0006"/>
+<g font-size="13" fill="#DED4BC"><text x="770" y="94">New Folder</text><text x="770" y="122">Properties</text><text x="770" y="150">Popover / menu</text></g>
+
+<rect x="260" y="318" width="100" height="32" rx="8" fill="#849e85"/><text x="310" y="339" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Delete</text>
+<rect x="378" y="318" width="120" height="32" rx="8" fill="#9dd0c0"/><text x="438" y="339" text-anchor="middle" font-size="13" fill="#202b2b">Success</text>
+<rect x="516" y="318" width="120" height="32" rx="8" fill="#c7ffe8"/><text x="576" y="339" text-anchor="middle" font-size="13" fill="#202b2b">Warning</text>
+
+<circle cx="40" cy="40" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="40" y="44" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">1</text><circle cx="660" cy="120" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="660" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">2</text><circle cx="208" cy="230" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="208" y="234" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">3</text><circle cx="600" cy="192" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="600" y="196" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">4</text><circle cx="920" cy="170" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="920" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">4</text><circle cx="240" cy="98" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="240" y="102" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">5</text><circle cx="800" cy="26" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="800" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">6</text><circle cx="580" cy="206" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="580" y="210" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">6</text><circle cx="508" cy="121" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="508" y="125" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">6</text><circle cx="268" cy="318" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="268" y="322" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">7</text><circle cx="386" cy="318" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="386" y="322" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">8</text><circle cx="524" cy="318" r="11" fill="#e9a747" stroke="#202b2b" stroke-width="1.2"/><text x="524" y="322" text-anchor="middle" font-size="12" font-weight="700" fill="#202b2b">9</text>
+</svg>
+<figcaption>Example: the Aether theme. Numbers match the table below. Every app gets the same mapping: libadwaita apps through its own styles, the rest through adw-gtk3.</figcaption>
+</figure>
+<table>
+  <tr><th>#</th><th>Omarchy colour</th><th>GTK colour names it sets</th><th>What it paints</th></tr>
+  <tr><td><span class="mk">1</span></td><td><span class="sw" style="background:#0A0E11"></span><code>background</code><br><small>#0A0E11 in Aether</small></td><td><code class="n">window_bg_color</code> <code class="n">headerbar_bg_color</code> <code class="n">headerbar_backdrop_color</code> <code class="n">accent_fg_color</code></td><td>Window background and header bar. Also the text on accent-coloured buttons.</td></tr>
+  <tr><td><span class="mk">2</span></td><td><span class="sw" style="background:#080b0d"></span><code>dark_background</code><br><small>#080b0d in Aether</small></td><td><code class="n">view_bg_color</code> <code class="n">secondary_sidebar_bg_color</code></td><td>Content views: file lists, text areas, list and tree views. Second sidebars in split views.</td></tr>
+  <tr><td><span class="mk">3</span></td><td><span class="sw" style="background:#050709"></span><code>darker_background</code><br><small>#050709 in Aether</small></td><td><code class="n">sidebar_bg_color</code> <code class="n">sidebar_backdrop_color</code></td><td>Sidebars, e.g. Nautilus's places list.</td></tr>
+  <tr><td><span class="mk">4</span></td><td><span class="sw" style="background:#232629"></span><code>lighter_background</code><br><small>#232629 in Aether</small></td><td><code class="n">card_bg_color</code> <code class="n">dialog_bg_color</code> <code class="n">popover_bg_color</code> <code class="n">thumbnail_bg_color</code></td><td>Cards and boxed lists (settings rows), dialogs, menus and popovers, tab thumbnails.</td></tr>
+  <tr><td><span class="mk">5</span></td><td><span class="sw" style="background:#DED4BC"></span><code>foreground</code><br><small>#DED4BC in Aether</small></td><td><code class="n">window_fg_color</code> <code class="n">view_fg_color</code> <code class="n">headerbar_fg_color</code> <code class="n">sidebar_fg_color</code> <code class="n">secondary_sidebar_fg_color</code> <code class="n">card_fg_color</code> <code class="n">dialog_fg_color</code> <code class="n">popover_fg_color</code> <code class="n">thumbnail_fg_color</code></td><td>All normal text and icons, on every surface above.</td></tr>
+  <tr><td><span class="mk">6</span></td><td><span class="sw" style="background:#5a8990"></span><code>accent</code><br><small>#5a8990 in Aether</small></td><td><code class="n">accent_bg_color</code> <code class="n">accent_color</code></td><td>Suggested buttons (Open, Save), switches, checkboxes, selection highlights, progress bars, and accent-coloured text such as links.</td></tr>
+  <tr><td><span class="mk">7</span></td><td><span class="sw" style="background:#849e85"></span><code>red</code><br><small>#849e85 in Aether</small></td><td><code class="n">destructive_bg_color</code> <code class="n">error_bg_color</code></td><td>Destructive buttons (Delete) and error states.</td></tr>
+  <tr><td><span class="mk">8</span></td><td><span class="sw" style="background:#9dd0c0"></span><code>green</code><br><small>#9dd0c0 in Aether</small></td><td><code class="n">success_bg_color</code></td><td>Success states.</td></tr>
+  <tr><td><span class="mk">9</span></td><td><span class="sw" style="background:#c7ffe8"></span><code>yellow</code><br><small>#c7ffe8 in Aether</small></td><td><code class="n">warning_bg_color</code></td><td>Warnings.</td></tr>
+</table>
+<div class="callout"><strong>Not used yet:</strong> <code>selection</code>, <code>selection_foreground</code>, <code>muted</code>, <code>blue</code>, <code>cyan</code>, <code>magenta</code>, <code>orange</code>, <code>brown</code>, the <code>bright_*</code> colours, and <code>dark_</code> / <code>light_</code> / <code>bright_foreground</code>. Anything the table doesn't cover, such as borders, shadows and hover shades, comes from libadwaita's or adw-gtk3's light or dark defaults, chosen by the theme's <code>mode</code>. To change a mapping, edit <code>themed/gtk.css.tpl</code> and re-run <code>install</code>.</div>
+<p><strong>GTK 4 apps without libadwaita</strong> also get one extra line: adw-gtk3 pins the accent to blue, so their theme files set <code>--accent-bg-color</code> back to <code>accent_bg_color</code> (colour 6). GTK 3 doesn't need it.</p>
+
+<h2 id="files"><span class="num">12 · FILES</span>Files</h2>
 <h3>The project: <code>~/Projects/Omarchy GTK4 Theming/</code></h3>
 <p>This folder is the source of truth for everything. <code>install</code> copies or builds from here, so the folder can be moved later without breaking anything that's installed.</p>
 <table>
@@ -244,7 +366,7 @@ ol.steps li{margin-bottom:8px}
 </table>
 <p>No system files under <code>/usr</code> or <code>/etc</code> are changed. The one package added is <code>adw-gtk-theme</code> from Arch's official repo (installed by you with <code>sudo pacman -S adw-gtk-theme</code>). It adds themes and replaces nothing.</p>
 
-<h2 id="undo"><span class="num">12 · UNDO</span>How to undo</h2>
+<h2 id="undo"><span class="num">13 · UNDO</span>How to undo</h2>
 <pre><code>~/Projects/"Omarchy GTK4 Theming"/uninstall
 nautilus -q      # drop the library from the running Nautilus
 
