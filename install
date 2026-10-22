@@ -19,7 +19,7 @@ TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
 GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
 THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
 THEMES_DIR="$HOME/.local/share/themes"
-HOOK="$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
+OLD_HOOK="$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
 DBUS_DIR="$HOME/.local/share/dbus-1/services"
 DESKTOP_DIR="$HOME/.local/share/applications"
 BINDINGS="$HOME/.config/hypr/bindings.lua"
@@ -60,8 +60,17 @@ step "linked $GTK_CSS -> current theme"
 # colours. adw-gtk3 looks them up by name like libadwaita does, so a theme that
 # imports adw-gtk3 and then our colours covers them. libadwaita apps ignore GTK
 # themes, so this can't affect them.
-for variant in Omarchy-GTK:adw-gtk3 Omarchy-GTK-dark:adw-gtk3-dark; do
+#
+# The themes are named Adwaita and Adwaita-dark: GTK finds these in
+# ~/.local/share/themes before its built-in copies, so Omarchy's own reset on
+# every switch (omarchy-theme-set-gnome) picks them. No hook to wait for, so no
+# window where apps fall back to the built-in theme.
+for variant in Adwaita:adw-gtk3 Adwaita-dark:adw-gtk3-dark; do
   name=${variant%%:*} base=${variant#*:}
+  if [[ -e $THEMES_DIR/$name ]] && ! grep -qs gtk-live-css "$THEMES_DIR/$name/gtk-4.0/gtk.css"; then
+    step "WARNING: skipped $THEMES_DIR/$name, you already have your own theme there"
+    continue
+  fi
   # In dark mode GTK loads gtk-dark.css and, if it's missing, silently falls
   # back to its built-in theme, so both files are needed.
   for gtk in gtk-3.0 gtk-4.0; do
@@ -77,10 +86,14 @@ EOF
     done
   done
 done
-step "created GTK themes Omarchy-GTK and Omarchy-GTK-dark (adw-gtk3 + theme colours)"
+step "created GTK themes Adwaita and Adwaita-dark in $THEMES_DIR (adw-gtk3 + theme colours)"
 
-install -Dm755 "$SRC/hooks/gtk4-theming.sh" "$HOOK"
-step "installed theme-set hook -> $HOOK"
+# Earlier versions used Omarchy-GTK themes plus a theme-set hook, which ran
+# after every other hook and left apps on the built-in theme for seconds.
+rm -f "$OLD_HOOK"
+for t in Omarchy-GTK Omarchy-GTK-dark; do
+  grep -qs gtk-live-css "$THEMES_DIR/$t/gtk-4.0/gtk.css" && rm -rf "${THEMES_DIR:?}/$t"
+done
 
 # --- live reload library ----------------------------------------------------
 # Build to a temp file and move it in: a running Nautilus keeps the old copy.
@@ -143,8 +156,10 @@ if [[ ! -f $THEME_CSS ]]; then
   omarchy-theme-refresh >/dev/null 2>&1 || true
   step "rendered gtk.css for the current theme"
 fi
-bash "$HOOK"
-step "switched GTK theme to $(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null)"
+# Let Omarchy set the GTK theme name (Adwaita / Adwaita-dark by theme mode),
+# which now resolves to ours.
+omarchy-theme-set-gnome 2>/dev/null || true
+step "GTK theme is $(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null), now adw-gtk3 + theme colours"
 
 cat <<'DONE'
 

@@ -16,10 +16,11 @@ colours. Omarchy renders it into the theme folder on every switch, and
 **GTK 3 and non-libadwaita apps.** Apps like Transmission (GTK 4 without
 libadwaita) and Evince (GTK 3) use GTK's built-in theme, which hard-codes its
 colours, so colour names do nothing there. `install` creates two small GTK
-themes, `Omarchy-GTK` and `Omarchy-GTK-dark`, that import
+themes in `~/.local/share/themes` that import
 [adw-gtk3](https://github.com/lassekongo83/adw-gtk3) (which looks colours up by
-name like libadwaita) and then the same `gtk.css`. A `theme-set` hook selects the
-right one after every switch, because Omarchy resets the GTK theme to Adwaita.
+name like libadwaita) and then the same `gtk.css`. They're named `Adwaita` and
+`Adwaita-dark`. GTK finds those before its built-in copies, so Omarchy's own
+reset to Adwaita on every theme switch picks ours, with no hook to wait for.
 
 **Live reload.** GTK reads that file once, at startup. A tiny library
 (`src/gtk-live-css.c`), loaded into the apps listed in `install` with
@@ -115,7 +116,6 @@ nautilus -q
 
 ```
 install / uninstall / test
-hooks/gtk4-theming.sh   theme-set hook: picks Omarchy-GTK / Omarchy-GTK-dark
 src/gtk-live-css.c      the live reload library
 src/test.c              test GTK 4 program used by ./test
 themed/gtk.css.tpl      Omarchy colours -> libadwaita named colours
@@ -131,8 +131,9 @@ docs/                   design notes and decisions
   setup (tested with Evince). Restart them after a switch.
 - **Electron and Flutter apps** (1Password, LocalSend) only use GTK for
   things like file dialogs, so only those change.
-- **Brief flash:** during a switch, open non-libadwaita GTK 4 apps may show
-  plain Adwaita for a moment while Omarchy's reset is active.
+- **"Adwaita" now means adw-gtk3 with your colours** for GTK 3 and
+  non-libadwaita GTK 4 apps, including anything that asks for Adwaita by name.
+  `uninstall` removes the two themes and the stock Adwaita comes back.
 - **Flatpak apps** don't see the library (sandbox), so they won't repaint live.
 - **An app started some other way won't have it**, e.g. a custom keybinding
   or script that runs the binary directly. Nautilus's Omarchy keybindings are
