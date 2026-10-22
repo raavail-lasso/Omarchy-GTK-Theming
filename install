@@ -16,7 +16,11 @@ APPS=(
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB="$HOME/.local/lib/gtk-live-css.so"
 TPL="$HOME/.config/omarchy/themed/gtk.css.tpl"
+TPL3="$HOME/.config/omarchy/themed/gtk3.css.tpl"
 GTK_CSS="$HOME/.config/gtk-4.0/gtk.css"
+GTK3_CSS="$HOME/.config/gtk-3.0/gtk.css"
+THEME_CSS3="$HOME/.local/state/omarchy/current/theme/gtk3.css"
+DATA="$HOME/.local/share/omarchy-gtk4-theming"
 THEME_CSS="$HOME/.local/state/omarchy/current/theme/gtk.css"
 THEMES_DIR="$HOME/.local/share/themes"
 OLD_HOOK="$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
@@ -55,16 +59,32 @@ fi
 ln -sfn "$THEME_CSS" "$GTK_CSS"
 step "linked $GTK_CSS -> current theme"
 
-# GTK 3 apps, and GTK 4 apps that don't use libadwaita's styles (Transmission),
-# ignore those colour names under GTK's built-in theme, which hard-codes its
-# colours. adw-gtk3 looks them up by name like libadwaita does, so a theme that
-# imports adw-gtk3 and then our colours covers them. libadwaita apps ignore GTK
-# themes, so this can't affect them.
-#
-# The themes are named Adwaita and Adwaita-dark: GTK finds these in
+# GTK 3 apps and GTK 4 apps that don't use libadwaita's styles (Transmission)
+# run on GTK's built-in theme, which hard-codes its colours, so colour names do
+# nothing there. adw-gtk3 looks them up by name like libadwaita does, so
+# importing adw-gtk3 and then our colours covers them.
+
+# GTK 3: a user stylesheet that imports adw-gtk3 (light or dark, by the theme's
+# mode) and our colours. GTK 3 loads ~/.config/gtk-3.0/gtk.css above any theme,
+# so this holds even for libhandy apps, which switch to GTK's built-in Adwaita.
+mkdir -p "$DATA"
+for mode in light:adw-gtk3 dark:adw-gtk3-dark; do
+  echo "@import url(\"file:///usr/share/themes/${mode#*:}/gtk-3.0/gtk.css\");" > "$DATA/adw-gtk3-${mode%%:*}.css"
+done
+sed -e "s|@DATA@|$DATA|" -e "s|@THEME_CSS@|$THEME_CSS|" "$SRC/themed/gtk3.css.tpl" > "$TPL3"
+mkdir -p "$(dirname "$GTK3_CSS")"
+if [[ -e $GTK3_CSS && ! -L $GTK3_CSS ]]; then
+  mv "$GTK3_CSS" "$GTK3_CSS.bak.$(date +%s)"
+  step "backed up your existing GTK 3 gtk.css"
+fi
+ln -sfn "$THEME_CSS3" "$GTK3_CSS"
+step "linked $GTK3_CSS -> current theme (adw-gtk3 + theme colours)"
+
+# GTK 4: themes named Adwaita and Adwaita-dark. GTK 4 finds these in
 # ~/.local/share/themes before its built-in copies, so Omarchy's own reset on
 # every switch (omarchy-theme-set-gnome) picks them. No hook to wait for, so no
-# window where apps fall back to the built-in theme.
+# window where apps fall back to the built-in theme. libadwaita apps ignore GTK
+# themes, so this can't affect them.
 for variant in Adwaita:adw-gtk3 Adwaita-dark:adw-gtk3-dark; do
   name=${variant%%:*} base=${variant#*:}
   if [[ -e $THEMES_DIR/$name ]] && ! grep -qs gtk-live-css "$THEMES_DIR/$name/gtk-4.0/gtk.css"; then
@@ -73,20 +93,20 @@ for variant in Adwaita:adw-gtk3 Adwaita-dark:adw-gtk3-dark; do
   fi
   # In dark mode GTK loads gtk-dark.css and, if it's missing, silently falls
   # back to its built-in theme, so both files are needed.
-  for gtk in gtk-3.0 gtk-4.0; do
-    mkdir -p "$THEMES_DIR/$name/$gtk"
-    for css in gtk.css gtk-dark.css; do
-      cat > "$THEMES_DIR/$name/$gtk/$css" <<EOF
+  mkdir -p "$THEMES_DIR/$name/gtk-4.0"
+  rm -rf "${THEMES_DIR:?}/$name/gtk-3.0"   # earlier versions also shadowed GTK 3 here
+  for css in gtk.css gtk-dark.css; do
+    # adw-gtk3's GTK 4 tweaks pin the accent to blue; the last line follows the
+    # theme's accent instead.
+    cat > "$THEMES_DIR/$name/gtk-4.0/$css" <<EOF
 /* $NOTE */
-@import url("file:///usr/share/themes/$base/$gtk/$css");
+@import url("file:///usr/share/themes/$base/gtk-4.0/$css");
 @import url("file://$THEME_CSS");
+:root { --accent-bg-color: @accent_bg_color; }
 EOF
-      # adw-gtk3's GTK 4 tweaks pin the accent to blue; follow the theme's instead.
-      [[ $gtk == gtk-4.0 ]] && echo ':root { --accent-bg-color: @accent_bg_color; }' >> "$THEMES_DIR/$name/$gtk/$css"
-    done
   done
 done
-step "created GTK themes Adwaita and Adwaita-dark in $THEMES_DIR (adw-gtk3 + theme colours)"
+step "created GTK 4 themes Adwaita and Adwaita-dark in $THEMES_DIR (adw-gtk3 + theme colours)"
 
 # Earlier versions used Omarchy-GTK themes plus a theme-set hook, which ran
 # after every other hook and left apps on the built-in theme for seconds.
@@ -152,7 +172,7 @@ EOF
 fi
 
 # --- render for the current theme -------------------------------------------
-if [[ ! -f $THEME_CSS ]]; then
+if [[ ! -f $THEME_CSS || ! -f $THEME_CSS3 ]]; then
   omarchy-theme-refresh >/dev/null 2>&1 || true
   step "rendered gtk.css for the current theme"
 fi

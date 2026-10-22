@@ -20,10 +20,14 @@ if [[ -f $BINDINGS ]]; then
 fi
 
 [[ $(readlink "$GTK_CSS" 2>/dev/null) == "$THEME_CSS" ]] && rm -f "$GTK_CSS"
-rm -f "$TPL" "$THEME_CSS" "$LIB" "$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
+GTK3_CSS="$HOME/.config/gtk-3.0/gtk.css" THEME_CSS3="${THEME_CSS%.css}3.css"
+[[ $(readlink "$GTK3_CSS" 2>/dev/null) == "$THEME_CSS3" ]] && rm -f "$GTK3_CSS"
+rm -f "$TPL" "${TPL%gtk.css.tpl}gtk3.css.tpl" "$THEME_CSS" "$THEME_CSS3" "$LIB" \
+  "$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
+rm -rf "$HOME/.local/share/omarchy-gtk4-theming"
 
 for t in Adwaita Adwaita-dark Omarchy-GTK Omarchy-GTK-dark; do
-  grep -qs gtk-live-css "$HOME/.local/share/themes/$t/gtk-3.0/gtk.css" && rm -rf "$HOME/.local/share/themes/$t"
+  grep -qs gtk-live-css "$HOME/.local/share/themes/$t/gtk-4.0/gtk.css" && rm -rf "$HOME/.local/share/themes/$t"
 done
 # Hand the GTK theme back to Omarchy (Adwaita / Adwaita-dark by theme mode).
 omarchy-theme-set-gnome 2>/dev/null || true

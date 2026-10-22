@@ -15,12 +15,17 @@ colours. Omarchy renders it into the theme folder on every switch, and
 
 **GTK 3 and non-libadwaita apps.** Apps like Transmission (GTK 4 without
 libadwaita) and Evince (GTK 3) use GTK's built-in theme, which hard-codes its
-colours, so colour names do nothing there. `install` creates two small GTK
-themes in `~/.local/share/themes` that import
+colours, so colour names do nothing there. Both get
 [adw-gtk3](https://github.com/lassekongo83/adw-gtk3) (which looks colours up by
-name like libadwaita) and then the same `gtk.css`. They're named `Adwaita` and
-`Adwaita-dark`. GTK finds those before its built-in copies, so Omarchy's own
-reset to Adwaita on every theme switch picks ours, with no hook to wait for.
+name like libadwaita) followed by the same `gtk.css`:
+
+- **GTK 4:** two small themes in `~/.local/share/themes` named `Adwaita` and
+  `Adwaita-dark`. GTK 4 finds those before its built-in copies, so Omarchy's own
+  reset to Adwaita on every theme switch picks ours, with no hook to wait for.
+- **GTK 3:** `~/.config/gtk-3.0/gtk.css`, rendered from `themed/gtk3.css.tpl`,
+  which picks light or dark adw-gtk3 by the theme's mode. GTK 3 loads it above
+  any theme. A theme-name trick doesn't work here: GTK 3 can't override its
+  built-in `Adwaita`, and libhandy apps (Evince, Disks) always switch to it.
 
 **Live reload.** GTK reads that file once, at startup. A tiny library
 (`src/gtk-live-css.c`), loaded into the apps listed in `install` with
@@ -60,7 +65,7 @@ grep -c gtk-live-css /proc/$(pgrep -x nautilus)/maps
 ```
 
 Re-run `./install` after an app update to refresh its override files, and
-after editing `themed/gtk.css.tpl`.
+after editing `themed/gtk.css.tpl` or `themed/gtk3.css.tpl`.
 
 ## Adding apps
 
@@ -119,6 +124,7 @@ install / uninstall / test
 src/gtk-live-css.c      the live reload library
 src/test.c              test GTK 4 program used by ./test
 themed/gtk.css.tpl      Omarchy colours -> libadwaita named colours
+themed/gtk3.css.tpl     GTK 3: adw-gtk3 (by theme mode) + the colours above
 docs/                   design notes and decisions
 ```
 
@@ -131,8 +137,8 @@ docs/                   design notes and decisions
   setup (tested with Evince). Restart them after a switch.
 - **Electron and Flutter apps** (1Password, LocalSend) only use GTK for
   things like file dialogs, so only those change.
-- **"Adwaita" now means adw-gtk3 with your colours** for GTK 3 and
-  non-libadwaita GTK 4 apps, including anything that asks for Adwaita by name.
+- **"Adwaita" now means adw-gtk3 with your colours** for non-libadwaita GTK 4
+  apps, including anything that asks for Adwaita by name.
   `uninstall` removes the two themes and the stock Adwaita comes back.
 - **Flatpak apps** don't see the library (sandbox), so they won't repaint live.
 - **An app started some other way won't have it**, e.g. a custom keybinding
