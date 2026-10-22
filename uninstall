@@ -20,6 +20,12 @@ if [[ -f $BINDINGS ]]; then
 fi
 
 [[ $(readlink "$GTK_CSS" 2>/dev/null) == "$THEME_CSS" ]] && rm -f "$GTK_CSS"
-rm -f "$TPL" "$THEME_CSS" "$LIB"
+rm -f "$TPL" "$THEME_CSS" "$LIB" "$HOME/.config/omarchy/hooks/theme-set.d/gtk4-theming.sh"
+
+for t in Omarchy-GTK Omarchy-GTK-dark; do
+  grep -qs gtk-live-css "$HOME/.local/share/themes/$t/gtk-3.0/gtk.css" && rm -rf "$HOME/.local/share/themes/$t"
+done
+# Hand the GTK theme back to Omarchy (Adwaita / Adwaita-dark by theme mode).
+omarchy-theme-set-gnome 2>/dev/null || true
 
 printf 'Omarchy GTK4 Theming removed. Restart open GTK 4 apps (e.g. nautilus -q) to drop the live reload.\n'
