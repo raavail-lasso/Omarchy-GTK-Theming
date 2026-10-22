@@ -1,5 +1,5 @@
 /* Omarchy GTK4 Theming: rendered into the theme folder on every theme switch.
-   ~/.config/gtk-4.0/gtk.css links to the result. Source: ~/Projects/Omarchy GTK4 Theming */
+   ~/.config/gtk-4.0/gtk.css links to the result. Source: ~/Projects/Omarchy GTK Theming */
 @define-color accent_color {{ accent }};
 @define-color accent_bg_color {{ accent }};
 @define-color accent_fg_color {{ background }};

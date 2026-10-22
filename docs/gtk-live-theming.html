@@ -63,7 +63,7 @@ td code.n{display:inline-block;margin:1px 2px;font-size:12px}</style>
     <a href="#files">Files</a>
     <a href="#undo">How to undo</a>
   </nav>
-  <div class="sidebar-footer"><strong>Snapshot</strong>gtk4 4.24.1 · libadwaita 1.10.0<br>Written 2026-10-22<br>~/Projects/Omarchy GTK4 Theming</div>
+  <div class="sidebar-footer"><strong>Snapshot</strong>gtk4 4.24.1 · libadwaita 1.10.0<br>Written 2026-10-22<br>~/Projects/Omarchy GTK Theming</div>
 </aside>
 
 <main id="content">
@@ -333,7 +333,7 @@ td code.n{display:inline-block;margin:1px 2px;font-size:12px}</style>
 <p><strong>GTK 4 apps without libadwaita</strong> also get one extra line: adw-gtk3 pins the accent to blue, so their theme files set <code>--accent-bg-color</code> back to <code>accent_bg_color</code> (colour 6). GTK 3 doesn't need it.</p>
 
 <h2 id="files"><span class="num">12 · FILES</span>Files</h2>
-<h3>The project: <code>~/Projects/Omarchy GTK4 Theming/</code></h3>
+<h3>The project: <code>~/Projects/Omarchy GTK Theming/</code></h3>
 <p>This folder is the source of truth for everything. <code>install</code> copies or builds from here, so the folder can be moved later without breaking anything that's installed.</p>
 <table>
   <tr><th>File</th><th>Purpose</th></tr>
@@ -367,7 +367,7 @@ td code.n{display:inline-block;margin:1px 2px;font-size:12px}</style>
 <p>No system files under <code>/usr</code> or <code>/etc</code> are changed. The one package added is <code>adw-gtk-theme</code> from Arch's official repo (installed by you with <code>sudo pacman -S adw-gtk-theme</code>). It adds themes and replaces nothing.</p>
 
 <h2 id="undo"><span class="num">13 · UNDO</span>How to undo</h2>
-<pre><code>~/Projects/"Omarchy GTK4 Theming"/uninstall
+<pre><code>~/Projects/"Omarchy GTK Theming"/uninstall
 nautilus -q      # drop the library from the running Nautilus
 
 # turn it off for a single run instead
